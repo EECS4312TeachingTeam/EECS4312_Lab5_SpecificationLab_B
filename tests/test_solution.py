@@ -8,7 +8,7 @@ Students can run these tests locally to check basic correctness of their impleme
 The hidden test suite used for grading contains additional edge cases and will not be
 available to students.
 """
-from solution import is_allocation_feasible
+from src.solution import is_allocation_feasible
 import pytest
 
 
@@ -46,3 +46,34 @@ def test_non_dict_request_raises():
         is_allocation_feasible(resources, requests)
 
 """TODO: Add at least 5 additional test cases to test your implementation."""
+
+
+def test_exact_fit_allocation():
+    resources = {'cpu': 10, 'mem': 32}
+    requests = [
+        {'cpu': 4, 'mem': 10},
+        {'cpu': 6, 'mem': 22}
+    ]
+    assert is_allocation_feasible(resources, requests) is True
+
+def test_over_allocation_returns_false():
+    resources = {'cpu': 8}
+    requests = [
+        {'cpu': 3},
+        {'cpu': 6}
+    ]
+    assert is_allocation_feasible(resources, requests) is False
+def test_unknown_resource_returns_false():
+    resources = {'cpu': 4}
+    requests = [{'gpu': 1}]
+    assert is_allocation_feasible(resources, requests) is False
+def test_empty_requests_is_feasible():
+    resources = {'cpu': 10, 'mem': 16}
+    requests = []
+    assert is_allocation_feasible(resources, requests) is True
+
+def test_non_dict_resources_raises():
+    resources = ['cpu', 5]  # malformed resources
+    requests = [{'cpu': 1}]
+    with pytest.raises(ValueError):
+        is_allocation_feasible(resources, requests)
