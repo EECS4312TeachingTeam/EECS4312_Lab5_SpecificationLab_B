@@ -20,14 +20,31 @@ def is_allocation_feasible(
 ) -> bool:
     """
     Determine whether a set of resource requests can be satisfied given limited capacities.
-
-    Args:
-        resources : Dict[str, Number], Mapping from resource name to total available capacity.
-        requests : List[Dict[str, Number]], List of requests. Each request is a mapping from resource name to the amount required.
-
-    Returns:
-        True if the allocation is feasible, False otherwise.
-
     """
-    # TODO: Implement this function
-    raise NotImplementedError("suggest_slots function has not been implemented yet")
+
+    # Structural validation: resources must be a dict
+    if not isinstance(resources, dict):
+        raise ValueError("Resources must be a dictionary")
+
+    total_requested: Dict[str, Number] = {}
+
+    for request in requests:
+        # Structural validation: each request must be a dict
+        if not isinstance(request, dict):
+            raise ValueError("Each request must be a dictionary")
+
+        for resource, amount in request.items():
+            if resource not in resources:
+                return False
+
+            total_requested[resource] = total_requested.get(resource, 0) + amount
+
+            if total_requested[resource] > resources[resource]:
+                return False
+
+    for resource, capacity in resources.items():
+        if total_requested.get(resource, 0) < capacity:
+            return True  
+
+    return False
+

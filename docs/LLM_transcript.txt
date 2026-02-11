@@ -8,3 +8,78 @@ LLM Response 1: "Copy paste LLMs response"
 Prompt 2: "Copy paste your question"
 LLM Response 2: "Copy paste LLMs response"
 --------------------------------------------------
+
+
+Prompt 1 : Based on ,my old code we have to add a req that there must be atgleast 1 capicty for my resource, Can I add a for loop at the end to check it or change the whole function 
+LLM response 1:Got it — this is a constraint add-on, not a rewrite. You want all existing behavior unchanged, plus one extra rule:
+
+After processing all requests, at least one resource must still have unused capacity.
+
+Key idea
+
+You already track how much is requested. After the loop finishes successfully, just check whether any resource has remaining capacity > 0.
+
+If every resource is fully consumed, return False.from typing import Dict, List, Union
+
+Number = Union[int, float]
+
+
+def is_allocation_feasible(
+    resources: Dict[str, Number],
+    requests: List[Dict[str, Number]]
+) -> bool:
+    """
+    Determine whether a set of resource requests can be satisfied given limited capacities.
+    At least one resource must remain partially unallocated.
+    """
+
+    # Structural validation: resources must be a dict
+    if not isinstance(resources, dict):
+        raise ValueError("Resources must be a dictionary")
+
+    total_requested: Dict[str, Number] = {}
+
+    for request in requests:
+        # Structural validation: each request must be a dict
+        if not isinstance(request, dict):
+            raise ValueError("Each request must be a dictionary")
+
+        for resource, amount in request.items():
+            if resource not in resources:
+                return False
+
+            total_requested[resource] = total_requested.get(resource, 0) + amount
+
+            if total_requested[resource] > resources[resource]:
+                return False
+
+    # NEW REQUIREMENT:
+    # At least one resource must have remaining capacity
+    for resource, capacity in resources.items():
+        if total_requested.get(resource, 0) < capacity:
+            return True  # at least one resource remains unallocated
+
+    return False  # all resources fully consumed
+
+
+prompt 2: make test cases similar to this for the new req def test_basic_feasible_single_resource(): # Basic Feasible Single-Resource # Constraint: total demand <= capacity # Reason: check basic functional requirement resources = {'cpu': 10} requests = [{'cpu': 3}, {'cpu': 4}, {'cpu': 3}] assert is_allocation_feasible(resources, requests) is True def test_multi_resource_infeasible_one_overloaded(): # Multi-Resource Infeasible (one overload) # Constraint: one resource exceeds capacity # Reason: check detection of per-resource infeasibility resources = {'cpu': 8, 'mem': 30} requests = [{'cpu': 2, 'mem': 8}, {'cpu': 3, 'mem': 10}, {'cpu': 3, 'mem': 14}]
+
+LLm resposne 2: Nice set of tests already 👍
+Below are additional pytest test cases written in the same style, specifically targeting the new requirement:
+
+def test_all_resources_exactly_consumed_is_infeasible():
+    # All Resources Fully Consumed
+    # Constraint: at least one resource must remain unallocated
+    # Reason: consuming all available resources is now invalid
+    resources = {'cpu': 4, 'mem': 8}
+    requests = [{'cpu': 4, 'mem': 8}]
+    assert is_allocation_feasible(resources, requests) is False
+
+
+def test_one_resource_remaining_is_feasible():
+    # One Resource Has Remaining Capacity
+    # Constraint: at least one resource must remain unallocated
+    # Reason: allocation leaves unused cpu
+    resources = {'cpu': 4, 'mem': 8}
+    requests = [{'cpu': 3, 'mem': 8}]
+    assert is_allocation_feasible(resources, requests) is True
